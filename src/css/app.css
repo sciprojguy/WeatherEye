@@ -3,6 +3,22 @@
   text-align: center;
 }
 
+#vehicle {
+	left: 0px;
+	bottom: 0px;
+	width: 300px;
+	height: 300px;
+	float:left;
+}
+
+#weather {
+	right:0px;
+	bottom:0px;
+	width:450px;
+	height:300px;
+	float:right;
+}
+
 #close {
   position: absolute;
   top: 90px;
@@ -12,6 +28,7 @@
   overflow: hidden;
   z-index: 1000;
 }
+
 #close img {
   width: 100%;
 }

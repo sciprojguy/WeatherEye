@@ -1,5 +1,6 @@
 var weatherApiKey = "3a5a5533643dadd75a8c095541dea0ed";
 
+
 var xhr = new XMLHttpRequest()
 
 function get_current_weather(lat,lon) {
@@ -16,9 +17,38 @@ function get_current_weather(lat,lon) {
 
 function updateWeatherInfo(data) {
 	dict = JSON.parse(data)
-	console.log(dict)
+	console.log(dict);
+	console.log(dict.name);
+	console.log(dict.weather[0].main);
+	console.log(dict.main.temp);
+	console.log(dict.main.humidity);
+	console.log(dict.visibility);
+	console.log(dict.wind.speed);
+	console.log(dict.wind.deg);
 	var weatherElement = document.getElementById('weather');
-	weatherElement.innerHTML = data;
+	
+	var weatherId = dict.weather[0].id;
+	var weatherIcon = dict.weather[0].icon;
+	
+	//weather_main
+	var mainWeatherDiv = document.getElementById('weather_main');
+	console.log(dict.weather.description);
+	
+	//clouds
+	var cloudsDiv = document.getElementById('clouds');
+	cloudsDiv.innerHTML = dict.weather[0].main;
+	
+	//temp - convert from Kelvin to Fahrenheit
+	var tempDiv = document.getElementById('temp');
+	tempDiv.innerHTML = dict.main.temp + " degrees Kelvin";
+	
+	//humidity
+	var humidityDiv = document.getElementById('humidity');
+	humidityDiv.innerHTML = "Humidity " + dict.main.humidity + "%";
+	
+	//wind
+	var windDiv = document.getElementById('wind');
+	windDiv.innerHTML = "Wind " + dict.wind.speed + " knots /" + dict.wind.deg + " degrees";
 }
 
 var options = {"frequency":10000};
