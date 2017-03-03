@@ -1,0 +1,13 @@
+{
+  "name":"WeatherEye",
+  "id":"99450479",
+  "version": "0.0.0",
+  "src": "src",
+  "dist": "dist",
+  "main": "index.html",
+  "icon": "Icon.png",
+  "developer": "TeamKimchi",
+  "category": "Monitoring",
+  "type": "RemoteHigh",
+  "description": "Generated on 3/2/2017, 7:04:44 PM by ngi-sdk version "
+}
