@@ -192,6 +192,9 @@ function updateWeatherInfo(data) {
 	var mainWeatherDiv = document.getElementById('icon');
 	mainWeatherDiv.innerHTML = "<img src=images/" + summary["Icon"] + ".png>";
 		
+	var mainNameDiv = document.getElementById('icon_name');
+	mainNameDiv.innerHTML = summary["Icon"];
+	
 	//temp - Fahrenheit
 	var tempDiv = document.getElementById('temp');
 	tempDiv.innerHTML = dict.main.temp.toFixed(1) + "F";
