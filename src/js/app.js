@@ -3,7 +3,24 @@ var weatherApiKey = "cc9c5e22a8ea8c2e950be212b856b9c2";
 var R = 6371;	// Earth radius in Km
 var kMPerMile = 1.60934;
 
+var windowsAreDown = false;
+var headlightsAreOff = false;
+
 var xhr = new XMLHttpRequest()
+
+var options = {"frequency":10000};
+
+var timeThreshold = 0;	//seconds
+var distanceThreshold = 100;	//meters
+
+var previousLat = undefined;
+var previousLon = undefined;
+var previousTimeStamp = undefined;
+var latIn10Miles = undefined;
+var lonIn10Miles = undefined;
+var previousHeading = 0;
+var currentSpeed = 0;
+var currentHeading = undefined;
 
 function get_current_weather(lat,lon) {
 	if(lat != undefined && lon != undefined) {
@@ -153,7 +170,7 @@ function weatherSummary(dict) {
 		summary["Icon"] = weatherConditions[dict.weather[0].id].Icon;
 	}
 	summary["Place"] = dict.name;
-	summary["Wind"] = dict.wind.speed + " mph " + compassRose(dict.wind.deg);
+	summary["Wind"] = dict.wind.speed.toFixed(1) + " mph " + compassRose(dict.wind.deg);
 	summary["Temp"] = dict.main.temp;
 	summary["Humidity"] = dict.humidity;
 	return summary;
@@ -165,6 +182,10 @@ function updateWeatherInfo(data) {
 
 	var summary = weatherSummary(dict);
 
+	if("Rain" == summary["Icon"] && windowsAreDown) {
+		sayRollUpWindows();
+	}
+	
 	var weatherElement = document.getElementById('weather');
 	
 	//weather_main
@@ -173,7 +194,7 @@ function updateWeatherInfo(data) {
 		
 	//temp - Fahrenheit
 	var tempDiv = document.getElementById('temp');
-	tempDiv.innerHTML = dict.main.temp + "F";
+	tempDiv.innerHTML = dict.main.temp.toFixed(1) + "F";
 	
 	//humidity
 	var humidityDiv = document.getElementById('humidity');
@@ -182,28 +203,29 @@ function updateWeatherInfo(data) {
 	//wind
 	var windDiv = document.getElementById('wind');
 	windDiv.innerHTML = "Wind " + summary["Wind"];
+	
+	//place
+	var placeDiv = document.getElementById('place');
+	placeDiv.innerHTML = summary["Place"];
 }
 
 function updateVehicleInfo(data) {
 	var speedDiv = document.getElementById('speed');
-	speedDiv.innerHTML = data.average_speed + " mph";
+	if(undefined != currentSpeed) {
+		speedDiv.innerHTML = currentSpeed + " mph";
+	}
+	else {
+		speedDiv.innerHTML = "0 mph";
+	}
 	
 	var headingDiv = document.getElementById('heading');
-	headingDiv.innerHTML = data.gps_heading + " " + compassRose(data.gps_heading);
+	if(undefined != currentHeading) {
+		headingDiv.innerHTML = currentHeading.toFixed(1) + " deg " + compassRose(currentHeading);
+	}
+	else {
+		headingDiv.innerHTML = "";
+	}
 }
-
-var options = {"frequency":10000};
-
-var positionWatchid = gm.info.watchPosition( processPosition, processFailure, options, true );
-
-var timeThreshold = 0;	//seconds
-var distanceThreshold = 0;	//meters
-
-var previousLat = undefined;
-var previousLon = undefined;
-var previousTimeStamp = undefined;
-var latIn10Miles = undefined;
-var lonIn10Miles = undefined;
 
 function kelvinToFahrenheit(kelvin) {
 	var f = (kelvin * 9.0 / 5.0) - 459.67;
@@ -223,6 +245,14 @@ function distanceInKm(lat1, lon1, lat2, lon2) {
     return d;
 }
 
+function headingFrom(lat1, lon1, lat2, lon2) {
+	var dLon = this.deg2rad(lon2-lon1);
+	var y = Math.sin(dLon) * Math.cos(deg2rad(lat2));
+	var x = Math.cos(deg2rad(lat1))*Math.sin(deg2rad(lat2)) - Math.sin(deg2rad(lat1))*Math.cos(deg2rad(lat2))*Math.cos(dLon);
+	var brng = radiansToDegrees(Math.atan2(y, x));
+	return ((brng + 360) % 360);	
+}
+
 function deg2rad(deg) {
 	return deg * (Math.PI/180);
 }
@@ -232,44 +262,32 @@ function elapsedTime(date1, date2) {
 	return diff/1000.0
 }
 
-function processPosition(position) {
-	
-	var ts = position.timestamp;
-	var lat = position.coords.latitude;
-	var lon = position.coords.longitude;
-	var heading = position.heading;
-	var altitude = position.altitude;
+function degreesToRadians(deg) {
+	return 3.1415927 * deg / 180.0;
+}
 
-	if(previousLat == null && previousLon == null) {
-		previousLat = lat;
-		previousLon = lon;
-	}
-	
-/*
-	φ2 = asin( sin(φ1)*cos(d/R) + cos(φ1)*sin(d/R)*cos(θ) )
-	λ2 = λ1 + atan2( sin(θ)*sin(d/R)*cos(φ1), cos(d/R)−sin(φ1)*sin(φ2) )
-	
-	lat2 = Math.asin( Math.sin(lat) * distanceInMeters/R ) + Math.cos(lat) * Math.sin(distanceInMeters/R) * cos(heading);
-	lon2 = lon1 + Math.atan2( sin(heading) * sin(d/R) * cos(lat1), cos(d/R) - sin(lat1) * sin(lat2));
- */
-	
-	var distance = distanceInKm(previousLat, previousLon, lat, lon);
-	if(distance > distanceThreshold) {
-		get_current_weather(lat, lon);
-	}
-	console.log('distance: '+distance);
+function radiansToDegrees(rad) {
+	return 180.0 * rad / 3.1415927;
 }
 
 //returns ["Lat", "Lon"]
-function nextLocation(lat, lon, heading, distance) {
+function nextLocation(lat, lon, headingDegrees, distance) {
+	
 	var nextPosition = {};
 	
-	var distanceInKm = 10.0 * 1.60934;
-	lat2 = Math.asin( Math.sin(lat) * distanceInKm/R ) + Math.cos(lat) * Math.sin(distanceInMeters/R) * cos(heading);
-	lon2 = lon1 + Math.atan2( sin(heading) * sin(d/R) * cos(lat1), cos(d/R) - sin(lat1) * sin(lat2));
+	var heading = degreesToRadians(headingDegrees);
+	var rLat = degreesToRadians(lat);
+	var rLon = degreesToRadians(lon);
 	
-	nextPosition["lat"] = lat2;
-	nextPosition["lon"] = lon2;
+	var distanceInKm = distance * 1.60934;
+	var angularDistance = distanceInKm / R;
+	
+	lat2 = Math.asin( Math.sin(rLat) * Math.cos(distanceInKm/R) ) + 
+	      Math.cos(rLat) * Math.sin(distanceInKm/R) * Math.cos(heading);
+	lon2 = rLon + Math.atan2( Math.sin(heading) * Math.sin(distanceInKm/R) * Math.cos(rLat), Math.cos(distanceInKm/R) - Math.sin(rLat) * Math.sin(rLat));
+
+	nextPosition["lat"] = radiansToDegrees(lat2);
+	nextPosition["lon"] = radiansToDegrees(lon2);
 	
 	return nextPosition;
 }
@@ -278,41 +296,65 @@ function processFailure(data) {
 	//send message to GUI app teo "Unable to get position"?
 }
 
+function sayRollWindowsUp() {
+	var tts = gm.voice.startTTS(doneTalking, "You might want to roll your windows up");
+	function doneTalking() {
+		gm.voice.stopTTS(tts);
+	}
+}
+
+const window_cracked = 1;
+
 function updateInfo(data) {
 	
-	var speed = data.average_speed;
+	console.log(data);
+	var drivers_window_open = data.window_driver > window_cracked;
+	var passenger_window_open = data.window_passenger > window_cracked;
+	var left_rear_window_open = data.window_leftrear > window_cracked;
+	var right_rear_window_open = data.window_rightrear > window_cracked;
+	
+	if(drivers_window_open || passenger_window_open || left_rear_window_open || right_rear_window_open) {
+		windowsOpen = true;
+	}
+	
+	if(undefined != data.average_speed) {
+		currentSpeed = data.average_speed;
+	}
+	
+	if(undefined != data.gps_heading) {
+		currentHeading = data.gps_heading;
+	}
+	
 	var lat = data.gps_lat * 2.7777777777777776e-7;
 	var lon = data.gps_long * 2.7777777777777776e-7;
 	var heading = data.gps_heading;
-	
-	if(speed != undefined) {
-		// var speedText = document.getElementById('speed');
-		// speedText.innerHTML = speed;
-	}
-	
-	if(heading != undefined) {
-		//update the heading block
-		//var headingStr = compassHeading(heading);
-		//var compassText = document.getElementById('heading');
-		//compassText.innerHTML = headingStr;
-	}
-	
+		
 	if(previousLat == null && previousLon == null) {
 		previousLat = lat;
 		previousLon = lon;
 	}
 
+	if(heading != undefined) {
+		currentHeading = data.gps_heading;
+	}
+	else {
+		currentHeading = headingFrom(previousLat, previousLon, lat, lon);
+	}
+	
 	if(lat != undefined && lon != undefined) {
 		//update lat/lon - distance since previous, 
 		//and compute projected next point?
 		get_current_weather(lat, lon);
 	}	
 	
+	var headingChange = (heading - previousHeading);
+	
 	var distance = distanceInKm(previousLat, previousLon, lat, lon);
-	if(distance > distanceThreshold) {
+	if(distance > distanceThreshold || Math.abs(headingChange)>10) {
 		get_current_weather(lat, lon);
 	}
-	console.log('distance: '+distance);
+
+	var nextPos = nextLocation(lat, lon, heading, 20.0);	
 
 	updateVehicleInfo(data);
 }
@@ -323,8 +365,16 @@ function updateInfo(data) {
 //unhide a div saying we need an internet connection to work
 
 console.log("starting up");
-gm.info.getVehicleData(updateInfo, ['average_speed', 'gps_lat', 'gps_long', 'gps_heading','gps_speed'])
-gm.info.watchVehicleData(updateInfo, ['average_speed', 'gps_lat', 'gps_long', 'gps_heading','gps_speed'])
+
+var data_items = [
+	'average_speed', 'gps_lat', 'gps_long', 'gps_heading',
+	'window_driver', 'window_leftrear', 'window_rightrear', 'window_passenger',
+	'wipers_on', 'light_level', 'headlamp_beam', 'light_level'
+];
+
+gm.info.getVehicleData(updateInfo, data_items);
+gm.info.watchVehicleData(updateInfo, data_items);
+
 console.log("finished startup");
 
 

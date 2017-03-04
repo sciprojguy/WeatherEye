@@ -26,41 +26,45 @@
 
   </head>
   <body class="daytime">
+	  
     <div id="wrapper">
 		
       <div id="close"><img src="images/close.png" onclick="gm.system.closeApp()" alt="close"></div>
 	  
       <div id="main">
-
-        <h3>WeatherEye</h3>
-        <p></p>		
 		
-		<div id='vehicle' style='float:left'>
-			<div id='speed'>
+		<div id='vehicle' style='float:left; padding:0px 0px 0px 0px;text-align:right;'>
+			<div id='speed' style='font-size:48pt'>
 			</div>
-			<div id='heading'>
+			<div id='heading' style='font-size:18pt'>
 			</div>
 		</div>
 		
-		<div id='weather' style='padding:16px 8px 16px 8px;'>	
+		<div id='weather' style='padding:0px 0px 0px 0px;'>	
 			
 			<div id='icon' style='float:left;height:128px;width:128px;float:left;padding-right:22px;'>
 			</div>
-			
+		
 			<div style='float:left'>
-			<div id='temp' style='font-size:38pt'>
-			</div>
-			<div id='humidity'>
-			</div>
-			<div id='wind'>
+				<div id='temp' style='font-size:48pt'>
+				</div>
+				<div id='place' style='font-size:18pt'>
+				</div>
+				<div id='humidity'>
+				</div>
+				<div id='wind'>
 			</div>
 			
 		</div>
-		
-		</div>
-		
+				
       </div>
-	  
+
+<!--
+	<div style='position:absolute; width:100%; background:green;height:64px;bottom:32px;'>
+		<button onclick='decrement()' style='color:white; background:darkgreen; height:32px; width:32px; font-size:18pt;vertical-align: middle;'>-</button>
+		<button onclick='increment()' style='color:white; background:darkgreen; height:32px; width:32px; font-size:18pt;vertical-align: middle'>+</button>
+	</div>
+-->  	  
     </div>
 
     <script src="js/app.js"></script>
