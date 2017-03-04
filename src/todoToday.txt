@@ -1,0 +1,22 @@
+ToDo:
+
+* in the RV, query summary rows from cache
+* look thru rowIds for discontinuities. fill those in with blank TextValue objects
+	* missing rows
+	* present rows, missing values
+	
+* look through each returned row
+
+	previousRowId = 0
+	for row in summaryRows {
+	
+		currentRowId = row["RowIndex"]
+		
+		if currentRowId != (previousRowId+1) {
+			// not contiguous.  fill in missing rows with *all* empty TextValue values
+			// from previousRowId to currentRowId-1
+		}
+		
+		//now check currentRow for missing values and replace them with empty TextValues
+	}
+

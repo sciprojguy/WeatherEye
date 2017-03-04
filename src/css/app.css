@@ -1,6 +1,16 @@
 /* Your CSS goes here */
 #main {
-  text-align: center;
+  text-align: left;
+}
+
+.daytime {
+	background:lightblue;
+	color:darkblue;
+}
+
+.nighttime {
+	.background:darkblue;
+	.color:lightblue;
 }
 
 #vehicle {
