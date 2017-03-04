@@ -181,9 +181,16 @@ function updateWeatherInfo(data) {
 	dict = JSON.parse(data)
 
 	var summary = weatherSummary(dict);
-
-	if("Rain" == summary["Icon"] && windowsAreDown) {
-		sayRollUpWindows();
+	
+	console.log(summary["Icon"]);
+	if( "Rain" == summary["Icon"] && windowsAreDown) {
+		console.log("ROLL UP WINDOWS");
+		sayRollWindowsUp();
+	}
+	else
+	if( "Drizzle" == summary["Icon"] && windowsAreDown) {
+		console.log("ROLL UP WINDOWS");
+		sayRollWindowsUp();
 	}
 	
 	var weatherElement = document.getElementById('weather');
@@ -210,9 +217,11 @@ function updateWeatherInfo(data) {
 	//place
 	var placeDiv = document.getElementById('place');
 	placeDiv.innerHTML = summary["Place"];
+	
 }
 
 function updateVehicleInfo(data) {
+	console.log(data);
 	var speedDiv = document.getElementById('speed');
 	if(undefined != currentSpeed) {
 		speedDiv.innerHTML = currentSpeed + " mph";
@@ -317,7 +326,7 @@ function updateInfo(data) {
 	var right_rear_window_open = data.window_rightrear > window_cracked;
 	
 	if(drivers_window_open || passenger_window_open || left_rear_window_open || right_rear_window_open) {
-		windowsOpen = true;
+		windowsAreDown = true;
 	}
 	
 	if(undefined != data.average_speed) {
